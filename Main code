@@ -1,0 +1,146 @@
+import nltk
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+from nltk.chat.util import Chat, reflections
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline\
+
+import json
+import re
+import random
+import string
+
+# Data processing
+class TextPreprocessing:
+    def __init__(self):
+        self.lemmatizer = WordNetLemmatizer()
+        self.stopwords = set(stopwords.words('english'))
+
+    def remove_punctuation(self, text):
+        return text.translate(str.maketrans('', '', string.punctuation))
+    
+    def tokenize(self, text):
+        return word_tokenize(text)
+    
+    def lemmatize(self, tokens):
+        return [self.lemmatizer.lemmatize(token) for token in tokens]
+    
+    def remove_stopwords(self, tokens):
+        return [token for token in tokens if token not in self.stopwords]
+    
+    def preprocess(self, text):
+        text = self.remove_punctuation(text)
+        text = text.lower()
+        tokens = self.tokenize(text)
+        tokens = self.lemmatize(tokens)
+        #tokens = self.remove_stopwords(tokens)
+        return " ".join(tokens)
+    
+
+class AIPowerChatbot:
+    def __init__(self):
+        self.vectorizer = CountVectorizer()
+        self.model = MultinomialNB()
+        self.pipeline = make_pipeline(self.vectorizer, self.model)
+        self.train_data()
+
+    def train_data(self):
+        training_sentences = [
+            "hello", "hi", "hey", "goodbye", "bye", "how are you", "I a fine", "thanks", "thank you", 
+            "what is your name", "who created you", "tel ma a joke", "I love you"
+        ]
+        responses = [ 
+            "Hi there!", "Hi there!", "Hello", "Goodbye!", "Bye!", "I'a doing great, thanks!", "That's good to hear!", 
+            "You're welcome!", "You're welcome!",
+            "I'm a chatbot!", "I was created by a developer!",
+            "Why don't scientists trust atoms? Becuse they make up everything!", "I love you too!"
+        ]
+
+        self.pipeline.fit(training_sentences, responses)
+
+    def chatbot_response(self, user_input):
+        return self.pipeline.predict([user_input])[0]
+        
+
+# Basic rule based chatbot
+def chatbot_response(user_input):
+    user_input = user_input.lower()
+    if "hello" in user_input or "hi" in user_input:
+        return "Hello, How can I help you?"
+    elif "how are you" in user_input:
+        return "I'm just a chatbot. I don't have feelings."
+    elif "your name" in user_input:
+        return "I am a chatbot. What can I do for you?"
+    elif "bye" in user_input:
+        return "Goodbye! have a great day!"
+    else:
+        return "I'm sorry, i don't understand your question."
+
+
+
+#print("Data preprocessing Example")
+#sample_text = "Hello, How are you doing today?. I am reading a book."
+#preprocessor = TextPreprocessing()
+#preprocessed_text = preprocessor.preprocess(sample_text)
+#print("Original Text: ", sample_text)
+#print("Preprocessed Text: ", preprocessed_text)
+
+#print("\nInteraediary Steps")
+#example_text = preprocessor.remove_punctuation(sample_text)
+#print("Remove Punctuations: ", example_text)
+#example_tokens = preprocessor.tokenize(example_text)
+#print("Tokens: ", example_tokens)
+#print("Lemmatize: ", preprocessor.lemmatize(example_tokens))
+#print("Remove Stopwords: ", preprocessor.remove_stopwords(preprocessor.lemmatize(example_tokens)))
+
+
+pairs = [
+    [
+        r"hi|hello|hey",
+        ["Hello,, How can I help you?", "Hey there!"]
+    ],
+    [
+        r"What is your name",
+        ["I am a simple chatbot created using Python and NLTK."]
+    ],
+    [
+        r"how are you",
+        ["I'm just a bot, but I'm doing great! How about you?", "I'm good! Thanks for asking." ]
+    ],
+    [
+        r"(.*) your name?",
+        ["My name is ChatBot. What's yours?","I am ChatBot, your virtual assistant."]
+    ],
+    [
+        r"(.*) help (.*)",
+        ["I can help you with general queries. What do you need help with?", "Sure! Let me know your question."]
+    ],
+    [
+        r"bye|goodbye",
+        ["Goodbye! Have a great day!","See you later! Take care."]
+    ],
+    [
+        r"(.*)",
+        ["I'm not sure how to respond to that. Could you rephrase?", "That's intresting! Tell me more."]
+    ]
+
+]
+
+chatbot = Chat(pairs, reflections)
+print("Basic Rule Based Chatbot")
+preprocessor = TextPreprocessing()
+ai_bot = AIPowerChatbot()
+print("\n")
+print("Chatbot: Hello, How can I hepl you")
+while True:
+    user_input = input("User: ")
+    preprocessed_text = preprocessor.preprocess(user_input)
+    if user_input.lower() == 'exit':
+        print("Chatbot: Goodbye! Have a great day!")
+        break
+    # response = chatbot.response(preprocessed_text) # basic rule based chatbot
+    # response = chatbot.respond(preprocessed_text) # rule based chatbot using nltk chat
+    response = ai_bot.chatbot_response(preprocessed_text) # if response == None else response
+    print("Chatbot : ", response)
